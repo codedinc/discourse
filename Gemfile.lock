@@ -1,3 +1,15 @@
+GIT
+  remote: https://github.com/codedinc/onebox.git
+  revision: 5540a57fcc3426307cbd6632199c355eae139025
+  specs:
+    onebox (1.1.0)
+      hexpress (~> 1.2)
+      moneta (~> 0.7)
+      multi_json (~> 1.7)
+      mustache (~> 0.99)
+      nokogiri (~> 1.6.1)
+      opengraph_parser (~> 0.2.3)
+
 PATH
   remote: vendor/gems/discourse_plugin
   specs:

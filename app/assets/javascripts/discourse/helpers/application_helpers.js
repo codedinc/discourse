@@ -109,7 +109,7 @@ Handlebars.registerHelper('shortenUrl', function(property, options) {
   var url, matches;
   url = Ember.Handlebars.get(this, property, options);
   // Remove trailing slash if it's a top level URL
-  matches = url.match(/\//g)
+  matches = url.match(/\//g);
   if (matches && matches.length === 3) {
     url = url.replace(/\/$/, '');
   }

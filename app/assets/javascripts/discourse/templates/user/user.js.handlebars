@@ -121,6 +121,8 @@
 
           {{#if viewingSelf}}
             <button {{action "logout"}} class='btn btn-danger right'><i class='fa fa-sign-out'></i>{{i18n user.log_out}}</button>
+
+            <a href="/subscription" target="_blank" class='btn right'><i class='fa fa-dollar'></i>Subscription</a>
           {{/if}}
 
           {{#if currentUser.staff}}

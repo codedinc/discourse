@@ -16,6 +16,33 @@ Handlebars.registerHelper('breakUp', function(property, hint, options) {
   return new Handlebars.SafeString(Discourse.Formatter.breakUp(prop, hint));
 });
 
+// helper function for dates
+function daysSinceEpoch(dt) {
+  // 1000 * 60 * 60 * 24 = days since epoch
+  return dt.getTime() / 86400000;
+}
+
+/**
+  Converts a date to a coldmap class
+
+  @method coldDate
+**/
+Handlebars.registerHelper('coldAgeClass', function(property, options) {
+  var dt = Em.Handlebars.get(this, property, options);
+
+  if (!dt) { return 'age'; }
+
+  // Show heat on age
+  var nowDays = daysSinceEpoch(new Date()),
+      epochDays = daysSinceEpoch(new Date(dt));
+  if (nowDays - epochDays > 60) return 'age coldmap-high';
+  if (nowDays - epochDays > 30) return 'age coldmap-med';
+  if (nowDays - epochDays > 14) return 'age coldmap-low';
+
+  return 'age';
+});
+
+
 /**
   Truncates long strings
 
@@ -52,6 +79,9 @@ function categoryLinkHTML(category, options) {
     if (options.hash.allowUncategorized) {
       categoryOptions.allowUncategorized = true;
     }
+    if (options.hash.showParent) {
+      categoryOptions.showParent = true;
+    }
     if (options.hash.categories) {
       categoryOptions.categories = Em.Handlebars.get(this, options.hash.categories, options);
     }
@@ -71,6 +101,12 @@ Handlebars.registerHelper('categoryLink', function(property, options) {
 
 Handlebars.registerHelper('categoryLinkRaw', function(property, options) {
   return categoryLinkHTML(property, options);
+});
+
+Handlebars.registerHelper('categoryBadge', function(property, options) {
+  var category = Em.Handlebars.get(this, property, options),
+      style = Discourse.HTML.categoryStyle(category);
+  return new Handlebars.SafeString("<span class='badge-category' style='" + style + "'>" + category.get('name') + "</span>");
 });
 
 /**
@@ -285,18 +321,14 @@ Handlebars.registerHelper('number', function(property, options) {
     title = I18n.t(options.hash.numberKey, { number: orig });
   }
 
-  // Round off the thousands to one decimal place
-  var n = orig;
-  if (orig > 999 && !options.hash.noTitle) {
-    n = (orig / 1000).toFixed(1) + "K";
-  }
-
   var classNames = 'number';
   if (options.hash['class']) {
     classNames += ' ' + Ember.Handlebars.get(this, options.hash['class'], options);
   }
   var result = "<span class='" + classNames + "'";
 
+  // Round off the thousands to one decimal place
+  var n = Discourse.Formatter.number(orig);
   if (n !== title) {
     result += " title='" + Handlebars.Utils.escapeExpression(title) + "'";
   }
@@ -335,16 +367,23 @@ Ember.Handlebars.registerBoundHelper('date', function(dt) {
 });
 
 /**
-  Look for custom html content in the preload store.
+  Look for custom html content using `Discourse.HTML`. If none exists, look for a template
+  to render with that name.
 
   @method customHTML
   @for Handlebars
 **/
-Handlebars.registerHelper('customHTML', function(property) {
-  var html = PreloadStore.get("customHTML");
+Handlebars.registerHelper('customHTML', function(name, contextString, options) {
+  var html = Discourse.HTML.getCustomHTML(name);
+  if (html) { return html; }
 
-  if (html && html[property] && html[property].length) {
-    return new Handlebars.SafeString(html[property]);
+  var container = (options || contextString).data.keywords.controller.container;
+
+  if (container.lookup('template:' + name)) {
+    return Ember.Handlebars.helpers.partial.apply(this, arguments);
   }
+});
 
+Ember.Handlebars.registerBoundHelper('humanSize', function(size) {
+  return new Handlebars.SafeString(I18n.toHumanSize(size));
 });

@@ -349,6 +349,9 @@ test("sanitize", function() {
   cooked("<iframe src=\"https://www.google.com/maps/embed?pb=!1m10!1m8!1m3!1d2624.9983685732213!2d2.29432085!3d48.85824149999999!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2s!4v1385737436368\" width=\"100\" height=\"42\"></iframe>",
          "<iframe src=\"https://www.google.com/maps/embed?pb=!1m10!1m8!1m3!1d2624.9983685732213!2d2.29432085!3d48.85824149999999!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2s!4v1385737436368\" width=\"100\" height=\"42\"></iframe>",
          "it allows iframe to google maps");
+  equal(sanitize("<textarea>hullo</textarea>"), "hullo");
+  equal(sanitize("<button>press me!</button>"), "press me!");
+  equal(sanitize("<canvas>draw me!</canvas>"), "draw me!");
 });
 
 test("URLs in BBCode tags", function() {
@@ -376,5 +379,11 @@ test("urlAllowed", function() {
   allowed("http://eviltrout.com/evil/trout", "allows full urls");
   allowed("https://eviltrout.com/evil/trout", "allows https urls");
   allowed("//eviltrout.com/evil/trout", "allows protocol relative urls");
+});
 
+test("images", function() {
+
+  cooked("[![folksy logo](http://folksy.com/images/folksy-colour.png)](http://folksy.com/)",
+         "<p><a href=\"http://folksy.com/\"><img src=\"http://folksy.com/images/folksy-colour.png\" alt=\"folksy logo\"/></a></p>",
+         "It allows images with links around them");
 });

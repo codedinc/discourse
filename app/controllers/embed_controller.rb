@@ -28,7 +28,7 @@ class EmbedController < ApplicationController
 
   def count
 
-    urls = params[:embed_url].map {|u| u.sub(/#discourse-comments$/, '') } 
+    urls = params[:embed_url].map {|u| u.sub(/#discourse-comments$/, '').sub(/\/$/, '') }
     topic_embeds = TopicEmbed.where(embed_url: urls).includes(:topic).references(:topic)
 
     by_url = {}
@@ -48,8 +48,8 @@ class EmbedController < ApplicationController
     def ensure_embeddable
 
       if !(Rails.env.development? && current_user.try(:admin?))
-        raise Discourse::InvalidAccess.new('embeddable host not set') if SiteSetting.embeddable_host.blank?
-        raise Discourse::InvalidAccess.new('invalid referer host') if URI(request.referer || '').host != SiteSetting.embeddable_host
+        raise Discourse::InvalidAccess.new('embeddable host not set') if SiteSetting.normalized_embeddable_host.blank?
+        raise Discourse::InvalidAccess.new('invalid referer host') if URI(request.referer || '').host != SiteSetting.normalized_embeddable_host
       end
 
       response.headers['X-Frame-Options'] = "ALLOWALL"

@@ -66,6 +66,8 @@ Discourse.Category = Discourse.Model.extend({
         permissions: this.get('permissionsForUpdate'),
         auto_close_hours: this.get('auto_close_hours'),
         position: this.get('position'),
+        email_in: this.get('email_in'),
+        email_in_allow_strangers: this.get('email_in_allow_strangers'),
         parent_category_id: this.get('parent_category_id')
       },
       type: this.get('id') ? 'PUT' : 'POST'
@@ -209,9 +211,14 @@ Discourse.Category.reopenClass({
   },
 
   findByIds: function(ids){
-    return ids.map(function(id){
-      return Discourse.Category.findById(id);
+    var categories = [];
+    _.each(ids, function(id){
+      var found = Discourse.Category.findById(id);
+      if(found){
+        categories.push(found);
+      }
     });
+    return categories;
   },
 
   findBySlug: function(slug, parentSlug) {

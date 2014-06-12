@@ -15,7 +15,7 @@
       <p>{{i18n admin.badges.no_badges}}</p>
     {{else}}
       <br>
-      {{combobox valueAttribute="id" value=controller.selectedBadgeId content=controller.badges}}
+      {{combobox valueAttribute="id" value=controller.selectedBadgeId content=controller.grantableBadges}}
       <button class='btn btn-primary' {{action grantBadge controller.selectedBadgeId}}>{{i18n admin.badges.grant}}</button>
     {{/if}}
 
@@ -27,8 +27,7 @@
 
     <table>
       <tr>
-        <th>{{i18n admin.badges.name}}</th>
-        <th>{{i18n admin.badges.badge_type}}</th>
+        <th>{{i18n admin.badges.badge}}</th>
         <th>{{i18n admin.badges.granted_by}}</th>
         <th>{{i18n admin.badges.granted_at}}</th>
         <th></th>
@@ -36,8 +35,7 @@
 
       {{#each}}
         <tr>
-          <td>{{badge.displayName}}</td>
-          <td>{{badge.badge_type.name}}</td>
+          <td>{{user-badge badge=badge}}</td>
           <td>
             {{#link-to 'adminUser' badge.granted_by}}
               {{avatar granted_by imageSize="tiny"}}

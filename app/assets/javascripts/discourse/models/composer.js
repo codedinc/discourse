@@ -52,11 +52,6 @@ Discourse.Composer = Discourse.Model.extend({
   canEditTitle: Em.computed.or('creatingTopic', 'creatingPrivateMessage', 'editingFirstPost'),
   canCategorize: Em.computed.and('canEditTitle', 'notCreatingPrivateMessage'),
 
-  showAdminOptions: function() {
-    if (this.get('creatingTopic') && Discourse.User.currentProp('staff')) return true;
-    return false;
-  }.property('canEditTitle'),
-
   // Determine the appropriate title for this action
   actionTitle: function() {
     var topic = this.get('topic');
@@ -166,7 +161,7 @@ Discourse.Composer = Discourse.Model.extend({
     return this.get('reply') !== this.get('originalText');
   }.property('reply', 'originalText'),
 
-/**
+  /**
     Number of missing characters in the title until valid.
 
     @property missingTitleCharacters
@@ -416,11 +411,11 @@ Discourse.Composer = Discourse.Model.extend({
       raw: this.get('reply'),
       editReason: opts.editReason,
       imageSizes: opts.imageSizes,
-      cooked: $('#wmd-preview').html()
+      cooked: this.getCookedHtml()
     });
     this.set('composeState', CLOSED);
 
-    return Ember.Deferred.promise(function(promise) {
+    return Em.Deferred.promise(function(promise) {
       post.save(function(result) {
         post.updateFromPost(result);
         composer.clearState();
@@ -453,11 +448,12 @@ Discourse.Composer = Discourse.Model.extend({
       topic_id: this.get('topic.id'),
       reply_to_post_number: post ? post.get('post_number') : null,
       imageSizes: opts.imageSizes,
-      cooked: $('#wmd-preview').html(),
+      cooked: this.getCookedHtml(),
       reply_count: 0,
       display_username: currentUser.get('name'),
       username: currentUser.get('username'),
       user_id: currentUser.get('id'),
+      avatar_template: currentUser.get('avatar_template'),
       metaData: this.get('metaData'),
       archetype: this.get('archetypeId'),
       post_type: Discourse.Site.currentProp('post_types.regular'),
@@ -484,7 +480,7 @@ Discourse.Composer = Discourse.Model.extend({
     }
 
     var composer = this;
-    return Ember.Deferred.promise(function(promise) {
+    return Em.Deferred.promise(function(promise) {
 
       composer.set('composeState', SAVING);
       createdPost.save(function(result) {
@@ -502,6 +498,11 @@ Discourse.Composer = Discourse.Model.extend({
           // We created a new topic, let's show it.
           composer.set('composeState', CLOSED);
           saving = false;
+
+          // Update topic_count for the category
+          var category = Discourse.Site.currentProp('categories').find(function(x) { return x.get('id') === (parseInt(createdPost.get('category'),10) || 1); });
+          if (category) category.incrementProperty('topic_count');
+          Discourse.notifyPropertyChange('globalNotice');
         }
 
         composer.clearState();
@@ -537,6 +538,10 @@ Discourse.Composer = Discourse.Model.extend({
         promise.reject(parsedError);
       });
     });
+  },
+
+  getCookedHtml: function() {
+    return $('#wmd-preview').html().replace(/<span class="marker"><\/span>/g, '');
   },
 
   saveDraft: function() {

@@ -28,7 +28,7 @@ class Notification < ActiveRecord::Base
     @types ||= Enum.new(
       :mentioned, :replied, :quoted, :edited, :liked, :private_message,
       :invited_to_private_message, :invitee_accepted, :posted, :moved_post,
-      :linked
+      :linked, :granted_badge
     )
   end
 
@@ -87,7 +87,7 @@ class Notification < ActiveRecord::Base
   def post
     return if topic_id.blank? || post_number.blank?
 
-    Post.where(topic_id: topic_id, post_number: post_number).first
+    Post.find_by(topic_id: topic_id, post_number: post_number)
   end
 
   def self.recent_report(user, count = nil)
@@ -123,12 +123,7 @@ class Notification < ActiveRecord::Base
   protected
 
   def refresh_notification_count
-    user_id = user.id
-    MessageBus.publish("/notification/#{user_id}",
-      {unread_notifications: user.unread_notifications,
-       unread_private_messages: user.unread_private_messages},
-      user_ids: [user_id] # only publish the notification to this user
-    )
+    user.publish_notifications_state
   end
 
 end
@@ -153,4 +148,3 @@ end
 #  index_notifications_on_post_action_id          (post_action_id)
 #  index_notifications_on_user_id_and_created_at  (user_id,created_at)
 #
-

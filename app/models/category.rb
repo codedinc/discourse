@@ -1,8 +1,7 @@
-require_dependency "concern/positionable"
-
 class Category < ActiveRecord::Base
 
-  include Concern::Positionable
+  include Positionable
+  include HasCustomFields
 
   belongs_to :topic, dependent: :destroy
   belongs_to :topic_only_relative_url,
@@ -186,6 +185,10 @@ SQL
     end
   end
 
+  def slug_for_url
+    slug.present? ? self.slug : "#{self.id}-category"
+  end
+
   def publish_categories_list
     MessageBus.publish('/categories', {categories: ActiveModel::ArraySerializer.new(Category.latest).as_json})
   end
@@ -272,11 +275,11 @@ SQL
     full = CategoryGroup.permission_types[:full]
 
     mapped = permissions.map do |group,permission|
-      group = group.id if Group === group
+      group = group.id if group.is_a?(Group)
 
       # subtle, using Group[] ensures the group exists in the DB
-      group = Group[group.to_sym].id unless Fixnum === group
-      permission = CategoryGroup.permission_types[permission] unless Fixnum === permission
+      group = Group[group.to_sym].id unless group.is_a?(Fixnum)
+      permission = CategoryGroup.permission_types[permission] unless permission.is_a?(Fixnum)
 
       [group, permission]
     end
@@ -303,7 +306,7 @@ SQL
   end
 
   def self.find_by_email(email)
-    self.where(email_in: Email.downcase(email)).first
+    self.find_by(email_in: Email.downcase(email))
   end
 
   def has_children?

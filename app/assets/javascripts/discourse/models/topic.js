@@ -52,6 +52,10 @@ Discourse.Topic = Discourse.Model.extend({
     return null;
   }.property('category_id', 'categoryName'),
 
+  categoryClass: function() {
+    return 'category-' + Discourse.Category.slugFor(this.get('category'));
+  }.property('category'),
+
   shareUrl: function(){
     var user = Discourse.User.current();
     return this.get('url') + (user ? '?u=' + user.get('username_lower') : '');
@@ -213,10 +217,10 @@ Discourse.Topic = Discourse.Model.extend({
     @method createInvite
     @param {String} emailOrUsername The email or username of the user to be invited
   **/
-  createInvite: function(emailOrUsername) {
+  createInvite: function(emailOrUsername, groupNames) {
     return Discourse.ajax("/t/" + this.get('id') + "/invite", {
       type: 'POST',
-      data: { user: emailOrUsername }
+      data: { user: emailOrUsername, group_names: groupNames }
     });
   },
 
@@ -271,12 +275,35 @@ Discourse.Topic = Discourse.Model.extend({
 
     // Clear the pin optimistically from the object
     topic.set('pinned', false);
+    topic.set('unpinned', true);
 
     Discourse.ajax("/t/" + this.get('id') + "/clear-pin", {
       type: 'PUT'
     }).then(null, function() {
       // On error, put the pin back
       topic.set('pinned', true);
+      topic.set('unpinned', false);
+    });
+  },
+
+  /**
+    Re-pins a topic with a cleared pin
+
+    @method rePin
+  **/
+  rePin: function() {
+    var topic = this;
+
+    // Clear the pin optimistically from the object
+    topic.set('pinned', true);
+    topic.set('unpinned', false);
+
+    Discourse.ajax("/t/" + this.get('id') + "/re-pin", {
+      type: 'PUT'
+    }).then(null, function() {
+      // On error, put the pin back
+      topic.set('pinned', true);
+      topic.set('unpinned', false);
     });
   },
 
@@ -405,6 +432,17 @@ Discourse.Topic.reopenClass({
     }).then(function (result) {
       if (result.success) return result;
       promise.reject(new Error("error moving posts topic"));
+    });
+    return promise;
+  },
+
+  changeOwners: function(topicId, opts) {
+    var promise = Discourse.ajax("/t/" + topicId + "/change-owner", {
+      type: 'POST',
+      data: opts
+    }).then(function (result) {
+      if (result.success) return result;
+      promise.reject(new Error("error changing ownership of posts"));
     });
     return promise;
   },
